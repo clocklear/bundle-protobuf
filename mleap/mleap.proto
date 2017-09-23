@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+import "bundle.proto";
+
+package ml.combust.mleap.grpc;
+
+message Empty { }
+
+message TransformerOptions {
+  double log_percent = 1;
+  repeated string log_fields = 2;
+  uint64 ttl = 3;
+}
+
+message Transformer {
+  string name = 1;
+  bytes bundle = 2;
+  TransformerOptions options = 3;
+}
+
+message LeapFrame {
+  string content_type = 1;
+  bytes data = 2;
+}
+
+message Row {
+  bytes data = 1;
+}
+
+message TransformOptions {
+  repeated string select = 1;
+}
+
+message Stream {
+  string name = 1;
+  string transformer_name = 2;
+  string acceptContentType = 3;
+  string contentType = 4;
+  bundle.Schema schema = 5;
+  TransformOptions options = 6;
+}
+
+/****************************************/
+/*        gRPC Service Objects          */
+/****************************************/
+
+message CreateTransformerRequest {
+  string name = 1;
+  string bundle_url = 2;
+  bytes bundle = 3;
+  TransformerOptions options = 4;
+
+  /* Fields for unloading existing transformer */
+  bool delete_streams = 100;
+}
+
+message DeleteTransformerRequest {
+  string name = 1;
+}
+
+message GetSchemaRequest {
+  string name = 1;
+}
+
+message CreateStreamRequest {
+  string transformer_name = 1;
+  string stream_name = 2;
+  string accept_content_type = 3;
+  string content_type = 4;
+  bundle.Schema schema = 5;
+  TransformOptions options = 6;
+}
+
+message DeleteStreamRequest {
+  string transformer_name = 1;
+  string stream_name = 2;
+}
+
+message TransformRequest {
+  string name = 1;
+  string accept_content_type = 2;
+  LeapFrame leap_frame = 3;
+  TransformOptions options = 4;
+}
+
+message StreamTransformRequest {
+  string transformer_name = 1;
+  string stream_name = 2;
+  uint64 id = 3;
+  Row row = 4;
+}
+
+message StreamTransformResponse {
+  uint64 id = 1;
+  Row row = 2;
+}
+
+service Mleap {
+  rpc CreateTransformer (CreateTransformerRequest) returns (Empty) { }
+  rpc DeleteTransformer (DeleteTransformerRequest) returns (Empty) { }
+  rpc GetSchema (GetSchemaRequest) returns (bundle.Schema) { }
+  rpc CreateStream (CreateStreamRequest) returns (Stream) { }
+  rpc DeleteStream (DeleteStreamRequest) returns (Empty) { }
+
+  rpc Transform (TransformRequest) returns (LeapFrame) { }
+  rpc StreamTransform (stream StreamTransformRequest) returns (stream StreamTransformResponse) { }
+}
+
